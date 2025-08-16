@@ -22,7 +22,7 @@ from django.conf.urls.static import static
 # from .views import LoginView
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('api.urls')),
+     path('', include('api.urls')),   # <--- include your app's urls.py
    
 ]
 

@@ -45,12 +45,14 @@ router.register('children', ChildViewSet, basename='child')
 router.register('adoptions', AdoptionApplicationViewSet, basename='adoption')
 
 urlpatterns = [
+     # ----------- API ROUTES -----------
+    path('api/', include(router.urls)),
     # ----------- PUBLIC APIs -----------
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
     path('adopt/', adoption_application_view, name='adopt'),
     path('children-list/', ChildListView.as_view(), name='children-list'),
 
-    # ----------- ADMIN APIs -----------
-    path('', include(router.urls)),  # Auto-generated routes for admin APIs
+    # # ----------- ADMIN APIs -----------
+    # path('', include(router.urls)),  # Auto-generated routes for admin APIs
 ]

@@ -158,7 +158,7 @@ class ChildAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         # Annotate each child with the number of related adoption applications
         qs = super().get_queryset(request)
-        return qs.annotate(app_count=Count("adoptionapplication"))
+        return qs.annotate(app_count=Count("applications"))
 
     def applications_count(self, obj):
         return obj.app_count

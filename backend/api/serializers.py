@@ -61,9 +61,17 @@ class RegistrationSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class ChildSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = Child
         fields = "__all__"
+
+    def get_image(self, obj):
+        request = self.context.get("request")
+        if obj.image and hasattr(obj.image, "url"):
+            return request.build_absolute_uri(obj.image.url)
+        return None
 
 class AdoptionApplicationSerializer(serializers.ModelSerializer):
     child_name = serializers.CharField(source="child.name", read_only=True)
