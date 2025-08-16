@@ -1,0 +1,63 @@
+.home-container {
+  height: 100vh; /* Full viewport height */
+  width: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  margin: 0;
+  padding: 0; /* Remove large padding here to avoid scroll */
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Vertically center hero content */
+  align-items: center; /* Horizontally center hero content */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.hero {
+  background-color: rgba(255, 255, 255, 0.4);
+  padding: 40px;
+  border-radius: 10px;
+  display: inline-block;
+  text-align: center;
+}
+
+.hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  color: #6a1b9a;
+}
+
+.brand {
+  color: #6a1b9a;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+  color: #333;
+}
+
+.hero-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.btn {
+  padding: 12px 0;
+  text-decoration: none;
+  border-radius: 5px;
+  color: white;
+  font-weight: bold;
+  width: 180px; /* Fixed width for same size */
+  text-align: center;
+}
+
+.adopt-btn {
+  background-color: #388e3c;
+}
+
+.donate-btn {
+  background-color: #d32f2f;
+}

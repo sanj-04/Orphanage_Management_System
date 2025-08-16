@@ -1,0 +1,74 @@
+/* Wrapper holds both bars */
+.navbar-wrapper {
+  width: 100%;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Top black bar */
+.navbar-top {
+  background-color: #0f0f0f;
+  color: #0f35cc;
+  padding: 10px 30px;
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+/* Blue nav bar */
+.navbar-main {
+  background-color: #ac3cec; /* Vivaldi-like blue */
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+  gap: 18px;
+}
+
+.navbar-main a {
+  text-decoration: none;
+  color: rgb(245, 238, 238);
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.navbar-main a:hover {
+  color: #ffeb3b;
+}
+
+.navbar-main span {
+  color: rgb(253, 249, 249);
+}
+.navbar {
+  background-color: #f3eeee; /* black bar */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 40px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.navbar-logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: rgb(107, 158, 235);
+}
+
+.navbar-links {
+  display: flex;
+  gap: 30px; /* spacing between menu items */
+}
+
+.navbar-links a {
+  text-decoration: none;
+  color: rgb(35, 67, 97);
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.navbar-links a:hover {
+  color: #35f164; /* light blue hover */
+}
