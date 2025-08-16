@@ -30,7 +30,7 @@ class Registration(models.Model):
     mother_phone = models.CharField(max_length=10)
     
     father_age = models.PositiveIntegerField(null=True, blank=True)
-    mother_age = models.PositiveIntegerField()
+    mother_age = models.PositiveIntegerField(null=True, blank=True)
     
     father_aadhar = models.CharField(max_length=12)
     mother_aadhar = models.CharField(max_length=12)

@@ -26,6 +26,9 @@ class RegisterSerializer(serializers.ModelSerializer):
             'father_aadhar', 'mother_aadhar',
             'address', 'reason', 'document'
         ]
+        
+        read_only_fields = ("is_approved", "user_id", "password")
+
     def validate(self, data):
         father_name = data.get('father_name', '').strip()
         father_email = data.get('father_email', '').strip()
