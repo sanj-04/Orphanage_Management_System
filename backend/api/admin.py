@@ -185,6 +185,7 @@ from .models import Registration, AdoptionApplication, Child
 import random
 import string
 from django.db.models import Count
+from django.contrib.auth.models import User
 
 # ------------------- REGISTRATION ADMIN -------------------
 @admin.register(Registration)
@@ -195,39 +196,46 @@ class RegistrationAdmin(admin.ModelAdmin):
     )
     list_filter = ("is_approved", "submitted_at")
     search_fields = ("father_name", "mother_name", "father_email", "mother_email")
-    readonly_fields = ('submitted_at',)
+    readonly_fields = ('submitted_at', 'user_id', 'password')
 
-    def has_delete_permission(self, request, obj=None):
-        return True
-    
+    actions = ["approve_registration", "deny_registration", "delete_selected"]
+
     def document_link(self, obj):
-        if obj.document:
+        if obj.document:  # assuming your Registration model has a FileField/ImageField `document`
             return format_html("<a href='{}' target='_blank'>View Document</a>", obj.document.url)
         return "-"
     document_link.short_description = "Document"
-
-    # ✅ keep custom actions + restore default bulk delete
-    actions = ["approve_registration", "deny_registration", "delete_selected"]
 
     def approve_registration(self, request, queryset):
         for reg in queryset:
             if not reg.is_approved:
                 reg.is_approved = True
                 reg.user_id = f"user_{reg.id}"
-                reg.password = "".join(random.choices(string.ascii_letters + string.digits, k=8))
+                raw_password = "".join(random.choices(string.ascii_letters + string.digits, k=8))
+                reg.password = raw_password  # store plain password only for email
+                
+                # create Django user properly
+                user, created = User.objects.get_or_create(username=reg.user_id, email=reg.father_email)
+                user.set_password(raw_password)   # ✅ hash password
+                user.save()
+                
                 reg.save()
+
+                # send email with correct credentials
+                recipients = [reg.father_email]
+                if reg.mother_email:
+                    recipients.append(reg.mother_email)
 
                 send_mail(
                     "Your Registration is Approved",
                     f"Dear {reg.father_name} & {reg.mother_name},\n\n"
                     f"Your application has been approved.\n"
-                    f"User ID: {reg.user_id}\nPassword: {reg.password}\n\nThank you.",
+                    f"User ID: {reg.user_id}\nPassword: {raw_password}\n\nThank you.",
                     "admin@example.com",
-                    [reg.father_email, reg.mother_email],
+                    recipients,
                     fail_silently=False,
                 )
         self.message_user(request, "Selected registrations approved and credentials sent.")
-    approve_registration.short_description = "Approve and send credentials"
 
     def deny_registration(self, request, queryset):
         for reg in queryset:
@@ -256,14 +264,20 @@ class AdoptionApplicationAdmin(admin.ModelAdmin):
     actions = ["approve_adoption", "reject_adoption", "delete_selected"]
 
     def approve_adoption(self, request, queryset):
-        queryset.update(status="Approved")
+        for app in queryset:
+            app.status = "Approved"
+            app.save()
+            app.child.status = "Adopted"
+            app.child.save()
         self.message_user(request, "Selected applications approved.")
-    approve_adoption.short_description = "Approve selected adoption applications"
 
     def reject_adoption(self, request, queryset):
-        queryset.update(status="Rejected")
+        for app in queryset:
+            app.status = "Rejected"
+            app.save()
+            app.child.status = "Available"  # child comes back
+            app.child.save()
         self.message_user(request, "Selected applications rejected.")
-    reject_adoption.short_description = "Reject selected adoption applications"
 
 
 # ------------------- CHILD ADMIN -------------------

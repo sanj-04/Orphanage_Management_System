@@ -3,7 +3,14 @@ from django.contrib.auth.models import User
 # myapp/models.py
 from django.db import models
 # Create your models here.
+
+
 class Child(models.Model):
+    STATUS_CHOICES = [
+        ("Available", "Available"),
+        ("Pending", "Pending"),   # application exists but not yet approved
+        ("Adopted", "Adopted"),   # final approval
+    ]
     name = models.CharField(max_length=100)
     age = models.IntegerField()
     gender = models.CharField(max_length=10)
@@ -11,7 +18,8 @@ class Child(models.Model):
     image = models.ImageField(upload_to="children/")
     health = models.TextField()
     background = models.TextField()
-
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Available")
+    
     def __str__(self):
         return self.name
     
