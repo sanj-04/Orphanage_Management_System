@@ -15,8 +15,8 @@ function Login() {
 
     try {
       const response = await axios.post("http://127.0.0.1:8000/api/login/", {
-        username,
-        password,
+        username: username.trim(),
+        password: password.trim(),
       });
 
       if (response.status === 200) {

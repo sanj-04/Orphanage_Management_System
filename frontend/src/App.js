@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Navbar from './components/Navbar'; // adjust path
 import Paid from './pages/Paid';
+import Logout from "./pages/Logout";
 function App() {
   return (
     <Router>
@@ -18,6 +19,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/paid" element={<Paid />}/>
+        <Route path="/logout" element={<Logout />} />
       </Routes>
     </Router>
   );

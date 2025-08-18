@@ -1,11 +1,15 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from "react";
 
-// Create the context
 export const AuthContext = createContext();
 
-// Create the provider component
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // On page load, check localStorage
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn }}>
@@ -13,6 +17,5 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-
 
 
