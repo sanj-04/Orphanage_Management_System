@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './CSS/Login.css';
+import { AuthContext } from '../context/AuthContext';   // ✅ import context
+
+
 
 function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
+  const { setIsLoggedIn } = useContext(AuthContext);   // ✅ use context
 
   const handleLogin = async (e) => {
     e.preventDefault();  // ✅ prevent form reload
@@ -25,6 +29,9 @@ function Login() {
         localStorage.setItem("username", response.data.username);
         localStorage.setItem("full_name", response.data.full_name || "");
         localStorage.setItem("email", response.data.email || "");
+
+          // ✅ Update context immediately
+        setIsLoggedIn(true);
 
         setMessage("Login successful");
         navigate("/adopt");
