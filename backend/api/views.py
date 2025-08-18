@@ -187,6 +187,9 @@ from .serializers import (
     AdoptionApplicationSerializer
 )
 from django.shortcuts import get_object_or_404
+from rest_framework.permissions import AllowAny
+from .models import Donation
+from .serializers import DonationSerializer
 
 # ---------------------- ADMIN API ----------------------
 class RegistrationViewSet(viewsets.ModelViewSet):
@@ -381,3 +384,22 @@ def adoption_application_view(request):
         return Response({"message": "Application submitted successfully"}, status=201)
 
     return Response(serializer.errors, status=400)
+
+# ---------------------- DONATION ----------------------
+
+@api_view(['POST'])
+@permission_classes([AllowAny]) 
+def donate_view(request):
+    data = request.data.copy()
+
+    # If user is logged in, attach user & default values
+    if request.user.is_authenticated:
+        data["user"] = request.user.id
+        if not data.get("email"):
+            data["email"] = request.user.email
+
+    serializer = DonationSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"message": "Donation successful"}, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

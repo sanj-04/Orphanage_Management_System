@@ -6,7 +6,7 @@ import random
 import string
 from django.db.models import Count
 from django.contrib.auth.models import User
-
+from .models import Donation
 
 @admin.register(Registration)
 class RegistrationAdmin(admin.ModelAdmin):
@@ -25,7 +25,7 @@ class RegistrationAdmin(admin.ModelAdmin):
             return format_html("<a href='{}' target='_blank'>View Document</a>", obj.document.url)
         return "-"
     document_link.short_description = "Document"
-    
+
     def approve_registration(self, request, queryset):
         for reg in queryset:
             if not reg.is_approved:
@@ -144,3 +144,11 @@ class ChildAdmin(admin.ModelAdmin):
             return format_html("<img src='{}' style='height: 50px;' />", obj.image.url)
         return "-"
     image_preview.short_description = "Photo"
+
+
+
+@admin.register(Donation)
+class DonationAdmin(admin.ModelAdmin):
+    list_display = ("full_name", "email", "amount", "payment_id", "created_at")
+    search_fields = ("full_name", "email", "payment_id")
+    list_filter = ("created_at",)

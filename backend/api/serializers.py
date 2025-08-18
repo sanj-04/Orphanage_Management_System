@@ -3,6 +3,7 @@ from rest_framework import serializers
 from .models import Registration, AdoptionApplication
 from rest_framework import serializers
 from .models import Child
+from .models import Donation
 
 class RegisterSerializer(serializers.ModelSerializer):
     father_name = serializers.CharField(required=False, allow_blank=True)
@@ -90,3 +91,8 @@ class AdoptionApplicationSerializer(serializers.ModelSerializer):
         if not data.get("full_name") and not data.get("email"):
             raise serializers.ValidationError("Applicant must have at least a name or email.")
         return data
+    
+class DonationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Donation
+        fields = "__all__"

@@ -68,6 +68,7 @@ from .views import (
     ChildViewSet,
     AdoptionApplicationViewSet
 )
+from .views import donate_view
 
 # DRF router for admin CRUD APIs
 router = DefaultRouter()
@@ -83,5 +84,5 @@ urlpatterns = [
     path('api/register/', RegisterView.as_view(), name='register'),
     path('api/login/', LoginView.as_view(), name='login'),
     path('api/adopt/', adoption_application_view, name='adopt'),
-    
+    path("api/donate/", donate_view, name="donate"),
 ]
