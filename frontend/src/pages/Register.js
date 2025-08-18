@@ -42,7 +42,7 @@ const Register = () => {
     });
 
     try {
-      const res = await axios.post("http://127.0.0.1:8000/register/", formPayload, {
+      const res = await axios.post("http://127.0.0.1:8000/api/register/", formPayload, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setSuccessMessage(res.data.message || "Registration successful!");

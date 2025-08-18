@@ -26,13 +26,44 @@
 
 # myapp/urls.py
 
+# from django.urls import path, include
+# from rest_framework.routers import DefaultRouter
+# from .views import (
+#     RegisterView,
+#     LoginView,
+#     adoption_application_view,
+#     ChildListView,
+#     RegistrationViewSet,
+#     ChildViewSet,
+#     AdoptionApplicationViewSet
+# )
+
+# # DRF router for admin CRUD APIs
+# router = DefaultRouter()
+# router.register('registrations', RegistrationViewSet, basename='registration')
+# router.register('children', ChildViewSet, basename='child')
+# router.register('adoptions', AdoptionApplicationViewSet, basename='adoption')
+
+# urlpatterns = [
+#      # ----------- API ROUTES -----------
+#     path('api/', include(router.urls)),
+#     # ----------- PUBLIC APIs -----------
+#     path('register/', RegisterView.as_view(), name='register'),
+#     path('login/', LoginView.as_view(), name='login'),
+#     path('adopt/', adoption_application_view, name='adopt'),
+#     path('children-list/', ChildListView.as_view(), name='children-list'),
+
+#     # # ----------- ADMIN APIs -----------
+#     # path('', include(router.urls)),  # Auto-generated routes for admin APIs
+# ]
+
+
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     RegisterView,
     LoginView,
     adoption_application_view,
-    ChildListView,
     RegistrationViewSet,
     ChildViewSet,
     AdoptionApplicationViewSet
@@ -45,14 +76,12 @@ router.register('children', ChildViewSet, basename='child')
 router.register('adoptions', AdoptionApplicationViewSet, basename='adoption')
 
 urlpatterns = [
-     # ----------- API ROUTES -----------
+    # ----------- API ROUTES -----------
     path('api/', include(router.urls)),
-    # ----------- PUBLIC APIs -----------
-    path('register/', RegisterView.as_view(), name='register'),
-    path('login/', LoginView.as_view(), name='login'),
-    path('adopt/', adoption_application_view, name='adopt'),
-    path('children-list/', ChildListView.as_view(), name='children-list'),
 
-    # # ----------- ADMIN APIs -----------
-    # path('', include(router.urls)),  # Auto-generated routes for admin APIs
+    # ----------- PUBLIC APIs -----------
+    path('api/register/', RegisterView.as_view(), name='register'),
+    path('api/login/', LoginView.as_view(), name='login'),
+    path('api/adopt/', adoption_application_view, name='adopt'),
+    
 ]

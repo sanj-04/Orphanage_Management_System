@@ -32,14 +32,14 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate(self, data):
         father_name = data.get('father_name', '').strip()
         father_email = data.get('father_email', '').strip()
-        father_phone = data.get('father_phone')
+        father_phone = data.get('father_phone', '').strip()
         father_age = data.get('father_age')
         father_aadhar = data.get('father_aadhar', '').strip()
         mother_name = data.get('mother_name', '').strip()
         mother_email = data.get('mother_email', '').strip()
         mother_age = data.get('mother_age')
         mother_aadhar = data.get('mother_aadhar', '').strip()
-        mother_phone = data.get('mother_phone')
+        mother_phone = data.get('mother_phone', '').strip()
 
         father_details = [father_name, father_email, father_phone, father_age, father_aadhar]
         mother_details = [mother_name, mother_email, mother_phone, mother_age, mother_aadhar]
@@ -49,19 +49,21 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         # Validate individual fields if one parent's details are partially filled
         if any(father_details) and not all(father_details):
-            if not father_name or not father_email or not isinstance(father_phone, int) or not isinstance(father_age, int) or not father_aadhar:
+            if not father_name or not father_email or not father_phone or not isinstance(father_age, int) or not father_aadhar:
                 raise serializers.ValidationError("Please enter complete details")
             
         if any(mother_details) and not all(mother_details):
-            if not mother_name or not mother_email or not isinstance(mother_phone, int) or not isinstance(mother_age, int) or not mother_aadhar:
+            if not mother_name or not mother_email or not mother_phone or not isinstance(mother_age, int) or not mother_aadhar:
                 raise serializers.ValidationError("Please enter complete details")
         
         return data
 
 class RegistrationSerializer(serializers.ModelSerializer):
+    """Used in Admin and APIs for listing/viewing registrations."""
     class Meta:
         model = Registration
         fields = "__all__"
+
 
 class ChildSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
@@ -72,20 +74,19 @@ class ChildSerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         request = self.context.get("request")
-        if obj.image and hasattr(obj.image, "url"):
+        if obj.image and hasattr(obj.image, "url") and request:
             return request.build_absolute_uri(obj.image.url)
         return None
+
 
 class AdoptionApplicationSerializer(serializers.ModelSerializer):
     child_name = serializers.CharField(source="child.name", read_only=True)
 
     class Meta:
         model = AdoptionApplication
-        fields = "__all__"  # includes 'child' ID, plus the child_name
+        fields = "__all__"
 
-        # myapp/serializers.py
-
-
-
-
-
+    def validate(self, data):
+        if not data.get("full_name") and not data.get("email"):
+            raise serializers.ValidationError("Applicant must have at least a name or email.")
+        return data

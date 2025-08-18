@@ -8,9 +8,9 @@
 # from django.contrib.auth import authenticate
 # from django.conf import settings
 # from rest_framework.authtoken.models import Token
-# import random, string
 # from django.contrib.auth.models import User
-
+# from rest_framework.decorators import permission_classes
+# from rest_framework.permissions import IsAuthenticated
 # from .models import Registration, Child, AdoptionApplication
 # from .serializers import (
 #     RegistrationSerializer,
@@ -20,80 +20,10 @@
 # )
 
 # # ---------------------- ADMIN API ----------------------
-
 # class RegistrationViewSet(viewsets.ModelViewSet):
-#     """Admin: Manage registrations, approve or deny applications."""
+#     """Admin: Manage registrations (approval handled in admin.py)."""
 #     queryset = Registration.objects.all().order_by('-submitted_at')
 #     serializer_class = RegistrationSerializer
-
-#     @action(detail=True, methods=['post'])
-#     def approve(self, request, pk=None):
-#         """Approve registration, create ONE user account, and send same credentials to both parents if available."""
-#         reg = self.get_object()
-#         if not reg.is_approved:
-#             reg.is_approved = True
-
-#             # Generate one set of credentials for the family
-#             username = f"user_{reg.id}"
-#             password = get_random_string(10)
-
-#             # Create user account (if not exists)
-#             user, created = User.objects.get_or_create(
-#                 username=username,
-#                 defaults={"email": reg.father_email or reg.mother_email}
-#             )
-#             if created:
-#                 user.set_password(password)
-#                 user.first_name = f"{reg.father_name} & {reg.mother_name}" if reg.mother_name else reg.father_name
-#                 user.save()
-
-#             # Store credentials in Registration model for reference
-#             reg.user_id = username
-#             reg.password = password
-#             reg.save()
-
-#             # Collect all available parent emails
-#             recipient_emails = []
-#             if reg.father_email:
-#                 recipient_emails.append(reg.father_email)
-#             if reg.mother_email and reg.mother_email not in recipient_emails:
-#                 recipient_emails.append(reg.mother_email)
-
-#             # Send same credentials to both
-#             send_mail(
-#                 "HopeNest Login Credentials",
-#                 f"Dear {reg.father_name} & {reg.mother_name},\n\n"
-#                 f"Your application has been approved.\n\n"
-#                 f"Here are your login credentials:\n"
-#                 f"Username: {username}\nPassword: {password}\n\n"
-#                 f"Please log in to continue.",
-#                 settings.EMAIL_HOST_USER,
-#                 recipient_emails,
-#                 fail_silently=False,
-#             )
-
-#         return Response({"status": "approved"})
-
-
-#     @action(detail=True, methods=['post'])
-#     def deny(self, request, pk=None):
-#         """Deny registration and notify applicant."""
-#         reg = self.get_object()
-#         recipient_emails = []
-#         if reg.father_email:
-#             recipient_emails.append(reg.father_email)
-#         if reg.mother_email:
-#             recipient_emails.append(reg.mother_email)
-
-#         send_mail(
-#             "Registration Declined",
-#             f"Dear {reg.father_name} & {reg.mother_name},\n\n"
-#             "We regret to inform you that your application has been declined.",
-#             settings.EMAIL_HOST_USER,
-#             recipient_emails
-#         )
-#         reg.delete()
-#         return Response({"status": "denied"})
 
 
 # class ChildViewSet(viewsets.ModelViewSet):
@@ -101,6 +31,8 @@
 #     queryset = Child.objects.all()
 #     serializer_class = ChildSerializer
 
+# def get_serializer_context(self):
+#         return {"request": self.request}
 
 # class AdoptionApplicationViewSet(viewsets.ModelViewSet):
 #     """Admin: Manage adoption applications."""
@@ -109,17 +41,15 @@
 
 
 # # ---------------------- PUBLIC API ----------------------
-
 # class RegisterView(APIView):
-#     """Public: Submit adoption registration request."""
+#     """Public: Submit adoption registration request (confirmation only)."""
 #     parser_classes = (MultiPartParser, FormParser)
 
 #     def post(self, request):
 #         serializer = RegisterSerializer(data=request.data)
 #         if serializer.is_valid():
-#             instance = serializer.save()  # Save Registration object
+#             instance = serializer.save()
 
-#             # Collect parent names + emails
 #             applicants = []
 #             if instance.father_name and instance.father_email:
 #                 applicants.append((instance.father_name, instance.father_email))
@@ -132,20 +62,19 @@
 #             greeting_names = " and ".join([a[0] for a in applicants])
 #             recipient_emails = [a[1] for a in applicants]
 
-#             # ✅ Send confirmation email (no credentials here)
+#             # ✅ Only confirmation email (NO credentials here)
 #             subject = 'HopeNest Registration Received'
 #             from_email = settings.EMAIL_HOST_USER
-#             text_content = f"Dear {greeting_names},\n\nYour registration has been received. Please wait for admin approval."
-#             html_content = f"<p>Dear <strong>{greeting_names}</strong>,<br>Your registration has been received. Please wait for admin approval.</p>"
+#             text_content = f"Dear {greeting_names},\n\nThank you for registering with HopeNest. Your application has been received and is under review."
+#             html_content = f"<p>Dear <strong>{greeting_names}</strong>,</p><p>Thank you for registering with HopeNest. Your application has been received and is under review.</p>"
 
 #             email = EmailMultiAlternatives(subject, text_content, from_email, recipient_emails)
 #             email.attach_alternative(html_content, "text/html")
 #             email.send()
 
-#             return Response({"message": "Registration submitted. Confirmation email sent."}, status=201)
+#             return Response({"message": "Registration submitted successfully"}, status=201)
 
 #         return Response(serializer.errors, status=400)
-
 
 
 # class LoginView(APIView):
@@ -153,81 +82,94 @@
 #     def post(self, request):
 #         username = request.data.get('username')
 #         password = request.data.get('password')
+
 #         if not username or not password:
 #             return Response({"detail": "Both username and password are required."}, status=400)
 
 #         user = authenticate(username=username, password=password)
-#         if user:
+
+#         if user is not None:
 #             token, created = Token.objects.get_or_create(user=user)
 #             return Response({
 #                 "message": "Login successful",
 #                 "token": token.key,
-#                 "user_id": username
-#             })
+#                 "user_id": user.id,  # ✅ keep only this one
+#                 "username": user.username,
+#                 "email": user.email,
+#                 "full_name": f"{user.first_name} {user.last_name}".strip() or user.username,
+#                 "phone": getattr(user, "phone", None),   # optional if you extend later
+#                 "address": getattr(user, "address", None),
+#             }, status=status.HTTP_200_OK)
+
 #         return Response({"detail": "Invalid username or password."}, status=401)
-
-
-# # @api_view(['POST'])
-# # def adoption_application_view(request):
-# #     """Public: Submit an adoption application for a specific child."""
-# #     child_id = request.data.get('child')
-# #     if not child_id:
-# #         return Response({"error": "Child ID is required."}, status=status.HTTP_400_BAD_REQUEST)
-
-# #     try:
-# #         child_obj = Child.objects.get(pk=child_id)
-# #     except Child.DoesNotExist:
-# #         return Response({"error": "Invalid child ID."}, status=status.HTTP_404_NOT_FOUND)
-
-# #     serializer = AdoptionApplicationSerializer(data=request.data)
-# #     if serializer.is_valid():
-# #         serializer.save(child=child_obj)
-# #         return Response({"message": "Application submitted successfully"}, status=status.HTTP_201_CREATED)
-
-# #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# @api_view(['POST'])
-# def adoption_application_view(request):
-#     child_id = request.data.get('child')
-#     user_id = request.data.get('user')
-
-#     if not child_id or not user_id:
-#         return Response({"error": "Child ID and User ID required."}, status=400)
-
-#     try:
-#         child = Child.objects.get(pk=child_id, status="Available")
-#     except Child.DoesNotExist:
-#         return Response({"error": "Child not available."}, status=404)
-
-#     user = User.objects.get(pk=user_id)
-
-#     # Save application
-#     application = AdoptionApplication.objects.create(
-#         user=user,
-#         full_name=request.data.get("full_name", user.username),
-#         email=request.data.get("email", user.email),
-#         phone=request.data.get("phone", ""),
-#         address=request.data.get("address", ""),
-#         user_message=request.data.get("message", ""),
-#         child=child
-#     )
-
-#     # mark child as pending
-#     child.status = "Pending"
-#     child.save()
-
-#     return Response({"message": "Application submitted successfully"}, status=201)
-
 
 # class ChildListView(generics.ListAPIView):
 #     """Public: List children available for adoption."""
 #     queryset = Child.objects.all()
 #     serializer_class = ChildSerializer
 
+#     def get_serializer_context(self):
+#             return {"request": self.request}
+
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])  # only logged in users can adopt
+# def adoption_application_view(request):
+#     """Public: Submit an adoption application for a specific child."""
+
+#     child_id = request.data.get("child")
+#     user_id = request.data.get("user")
+
+#     if not child_id:
+#         return Response({"error": "Child ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+#     if not user_id:
+#         return Response({"error": "User ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+#     # Check if child exists
+#     try:
+#         child_obj = Child.objects.get(pk=child_id)
+#     except Child.DoesNotExist:
+#         return Response({"error": "Invalid child ID."}, status=status.HTTP_404_NOT_FOUND)
+
+#     # Check if user exists
+#     try:
+#         user_obj = User.objects.get(pk=user_id)
+#     except User.DoesNotExist:
+#         return Response({"error": "Invalid user ID."}, status=status.HTTP_404_NOT_FOUND)
+
+#     # Build data for serializer
+#     data = request.data.copy()
+#     data["user"] = user_obj.id
+#     data["child"] = child_obj.id
+
+#     # ✅ Autofill from User model if not provided
+#     if not data.get("full_name"):
+#         full_name = f"{user_obj.first_name} {user_obj.last_name}".strip()
+#         data["full_name"] = full_name if full_name else user_obj.username
+
+#     if not data.get("email"):
+#         data["email"] = user_obj.email or "N/A"
+
+#     if not data.get("phone"):
+#         data["phone"] = getattr(user_obj, "phone", "N/A")
+
+#     if not data.get("address"):
+#         data["address"] = getattr(user_obj, "address", "N/A")
+
+#     serializer = AdoptionApplicationSerializer(data=data)
+#     if serializer.is_valid():
+#         serializer.save(user=user_obj, child=child_obj)
+
+#         # ✅ Mark child as Pending
+#         child_obj.status = "Pending"
+#         child_obj.save()
+
+#         return Response({"message": "Application submitted successfully"}, status=status.HTTP_201_CREATED)
+
+#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 from rest_framework import viewsets, generics, status
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
@@ -235,7 +177,8 @@ from django.core.mail import send_mail, EmailMultiAlternatives
 from django.contrib.auth import authenticate
 from django.conf import settings
 from rest_framework.authtoken.models import Token
-
+from django.contrib.auth.models import User
+from rest_framework.permissions import IsAuthenticated
 from .models import Registration, Child, AdoptionApplication
 from .serializers import (
     RegistrationSerializer,
@@ -243,6 +186,7 @@ from .serializers import (
     ChildSerializer,
     AdoptionApplicationSerializer
 )
+from django.shortcuts import get_object_or_404
 
 # ---------------------- ADMIN API ----------------------
 class RegistrationViewSet(viewsets.ModelViewSet):
@@ -255,6 +199,9 @@ class ChildViewSet(viewsets.ModelViewSet):
     """Admin: CRUD for children."""
     queryset = Child.objects.all()
     serializer_class = ChildSerializer
+
+    def get_serializer_context(self):
+        return {"request": self.request}
 
 
 class AdoptionApplicationViewSet(viewsets.ModelViewSet):
@@ -285,7 +232,7 @@ class RegisterView(APIView):
             greeting_names = " and ".join([a[0] for a in applicants])
             recipient_emails = [a[1] for a in applicants]
 
-            # ✅ Only confirmation email (NO credentials here)
+            # ✅ Confirmation email (no credentials here)
             subject = 'HopeNest Registration Received'
             from_email = settings.EMAIL_HOST_USER
             text_content = f"Dear {greeting_names},\n\nThank you for registering with HopeNest. Your application has been received and is under review."
@@ -300,46 +247,137 @@ class RegisterView(APIView):
         return Response(serializer.errors, status=400)
 
 
+# views.py
 class LoginView(APIView):
-    """Public: Login endpoint."""
-    def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        if not username or not password:
-            return Response({"detail": "Both username and password are required."}, status=400)
+    def post(self, request, *args, **kwargs):
+        try:
+            print("📥 Login request data:", request.data)
+            username = request.data.get("username")
+            password = request.data.get("password")
 
-        user = authenticate(username=username, password=password)
-        if user:
-            token, created = Token.objects.get_or_create(user=user)
+            if not username or not password:
+                print("❌ Missing username/password")
+                return Response(
+                    {"detail": "Both username and password are required."},
+                    status=400
+                )
+
+            user = authenticate(username=username, password=password)
+            print("🔍 Authenticated user:", user)
+
+            if user is None:
+                return Response(
+                    {"detail": "Invalid username or password."},
+                    status=401
+                )
+
+            # ⚡ Wrap token in try/except so it never kills response
+            try:
+                from rest_framework.authtoken.models import Token
+                token, created = Token.objects.get_or_create(user=user)
+                print("🔑 Token generated:", token.key)
+                token_key = token.key
+            except Exception as e:
+                print("💥 Token error:", e)
+                token_key = None
+
+            # ⚡ Registration lookup (force str since user_id is CharField)
+            reg = None
+            try:
+                reg = Registration.objects.filter(user_id=user.id).first()
+                print("📄 Matched Registration:", reg)
+            except Exception as e:
+                print("💥 Registration fetch error:", e)
+
+            # ✅ Decide what to send back
+            if reg:
+                full_name = reg.father_name or reg.mother_name or user.username
+                email = reg.father_email or reg.mother_email or user.email
+                phone = reg.father_phone or reg.mother_phone or None
+                address = reg.address
+            else:
+                full_name = f"{user.first_name} {user.last_name}".strip() or user.username
+                email = user.email
+                phone = None
+                address = None
+
+            print("✅ Returning success response")
             return Response({
                 "message": "Login successful",
-                "token": token.key,
-                "user_id": username
-            })
-        return Response({"detail": "Invalid username or password."}, status=401)
+                "token": token_key,
+                "user_id": user.id,
+                "username": user.username,
+                "full_name": full_name,
+                "email": email,
+                "phone": phone,
+                "address": address,
+            }, status=200)
 
-
-@api_view(['POST'])
-def adoption_application_view(request):
-    """Public: Submit an adoption application for a specific child."""
-    child_id = request.data.get('child')
-    if not child_id:
-        return Response({"error": "Child ID is required."}, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        child_obj = Child.objects.get(pk=child_id)
-    except Child.DoesNotExist:
-        return Response({"error": "Invalid child ID."}, status=status.HTTP_404_NOT_FOUND)
-
-    serializer = AdoptionApplicationSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save(child=child_obj)
-        return Response({"message": "Application submitted successfully"}, status=status.HTTP_201_CREATED)
-
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print("🔥 Unexpected error in LoginView:", e)
+            return Response({"detail": f"Login failed: {e}"}, status=500)
 
 
 class ChildListView(generics.ListAPIView):
     """Public: List children available for adoption."""
     queryset = Child.objects.all()
     serializer_class = ChildSerializer
+
+    def get_serializer_context(self):
+        return {"request": self.request}
+
+
+# ---------------------- ADOPTION APPLICATION ----------------------
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def adoption_application_view(request):
+    """Submit an adoption application with real parent details."""
+    child_id = request.data.get("child")
+    if not child_id:
+        return Response({"error": "Child ID is required."}, status=400)
+
+    user_obj = request.user
+    child_obj = get_object_or_404(Child, pk=child_id)
+
+    # 🔎 Try to fetch linked Registration
+    reg = Registration.objects.filter(user_id=user_obj.id).first()
+
+    data = request.data.copy()
+    data["user"] = user_obj.id
+    data["child"] = child_obj.id
+
+
+    if reg:
+        parents = []
+        if reg.father_name:
+            parents.append(reg.father_name)
+        if reg.mother_name:
+            parents.append(reg.mother_name)
+        # ✅ Prefer parent details from Registration
+        data["full_name"] = reg.father_name or reg.mother_name
+        data["email"] = reg.father_email or reg.mother_email
+        data["phone"] = reg.father_phone or reg.mother_phone
+        data["address"] = reg.address
+    else:
+        # fallback to User object
+        full_name = f"{user_obj.first_name} {user_obj.last_name}".strip()
+        data["full_name"] = full_name if full_name else user_obj.username
+        data["email"] = user_obj.email or f"{user_obj.username}@hopesnest.local"
+        data["phone"] = getattr(user_obj, "phone", "N/A")
+        data["address"] = getattr(user_obj, "address", "N/A")
+
+    reg = getattr(user_obj, "registration", None)
+    if not reg:
+        return Response({"error": "Your account is not linked to a registration. Please contact admin."}, status=400)
+
+    serializer = AdoptionApplicationSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save(user=user_obj, child=child_obj)
+
+        # mark child as pending
+        child_obj.status = "Pending"
+        child_obj.save()
+
+        return Response({"message": "Application submitted successfully"}, status=201)
+
+    return Response(serializer.errors, status=400)
